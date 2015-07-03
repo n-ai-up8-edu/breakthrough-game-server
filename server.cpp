@@ -17,52 +17,77 @@ std::list<int> players_id;
 #define BLACK '@'
 #define WHITE 'o'
 
+char inv_col(char _col) {
+  if(_col == WHITE) return BLACK;
+  if(_col == BLACK) return WHITE;
+  return _col;
+}
+
+struct game_info_t {
+  char player1_color;
+  char turn;
+  int player1_id;
+  int player1_key;
+  char player1_name[128];
+  int player2_id;
+  int player2_key;
+  char player2_name[128];
+  char board[BOARD_SIZE];
+};
+
 struct games_t {
-  int player1_id[MAX_GAME];
-  int player1_key[MAX_GAME];
-  int player2_id[MAX_GAME];
-  int player2_key[MAX_GAME];
-  
-  char* boards;
+  game_info_t* infos;
 
   games_t() {
-    boards = new char[BOARD_SIZE*MAX_GAME];
+    infos = new game_info_t[MAX_GAME];
     for(int i = 0; i < MAX_GAME; i++) {
-      player1_id[i] = -1;
-      player1_key[i] = -1;
-      player2_id[i] = -1;
-      player2_key[i] = -1;
+      infos[i].player1_color = WHITE;
+      infos[i].turn = FREE_SPACE;
+      infos[i].player1_id = -1;
+      infos[i].player1_key = -1;
+      sprintf(infos[i].player1_name, "%s", (char*)"");
+      infos[i].player2_id = -1;
+      infos[i].player2_key = -1;
+      sprintf(infos[i].player2_name, "%s", (char*)"");
       init_board(i);
     }
   }
   ~games_t() {
-    delete(boards);
+    delete(infos);
   }
 
   void print_state() {
     printf("---nb_player: %d\n", (int)players_id.size());
     for(int i = 0; i < MAX_GAME; i++) {
-      if(player1_id[i] != -1 || player1_key[i] != -1 || 
-	 player2_id[i] != -1 || player2_key[i] != -1) {
-	printf("---\t%d:%d\t%d:%d\n", 
-	       player1_id[i], player1_key[i],
-	       player2_id[i], player2_key[i]);
+      if(infos[i].player1_id != -1 || infos[i].player1_key != -1 || 
+	 infos[i].player2_id != -1 || infos[i].player2_key != -1) {
+
+	char p2_color = inv_col(infos[i].player1_color);
+
+	printf("---\t%d:%d:%c\t%d:%d:%c %c\n", 
+	       infos[i].player1_id, infos[i].player1_key,
+	       infos[i].player1_color, 
+	       infos[i].player2_id, infos[i].player2_key,
+	       p2_color,
+	       infos[i].turn);
       }
     }
   }
+
   void quit(int _id, int _key) {
     players_id.remove(_id);
     for(int i = 0; i < MAX_GAME; i++) {
-      if(player1_id[i] == _id || player1_key[i] == _key) {
-	player1_id[i] = -1; player1_key[i] = -1;
-	player2_id[i] = -1; player2_key[i] = -1;
+      if(infos[i].player1_id == _id || infos[i].player1_key == _key) {
+	infos[i].player1_id = -1; infos[i].player1_key = -1;
+	infos[i].player2_id = -1; infos[i].player2_key = -1;
       }
-      if(player2_id[i] == _id || player2_key[i] == _key) {
-	player2_id[i] = -1; player2_key[i] = -1;
-	player1_id[i] = -1; player1_key[i] = -1;
+      if(infos[i].player2_id == _id || infos[i].player2_key == _key) {
+	infos[i].player1_id = -1; infos[i].player1_key = -1;
+	infos[i].player2_id = -1; infos[i].player2_key = -1;
       }
     }
   }
+
   bool player_identification(int _pid, char*_pname);
   bool player_key_involved(int _player_key);
   bool player_id_involved(int _player_id);
@@ -149,17 +174,22 @@ bool player_name_is_valide(char* _pname) {
 
 // return false when new_game is NOT ALLOWED
 bool parse_new_game(int _id, char _in[MESSAGE_MAX_LENGTH - 8], int& _pkey, int& _new_game_id) {
+  char color;
   int key;
   char name[128];
-  int r = sscanf(_in, "%d:%s", &key, name);
-  if( r != 2) return false;
+  int r = sscanf(_in, "%c %d:%s", &color, &key, name);
+  if( r != 3) return false;
+  if(color != WHITE & color != BLACK) return false;
   if(all_games.player_identification(key, name) == false) return false;
   if(all_games.player_key_involved(key) == true) return false;
   if(all_games.player_id_involved(_id) == true) return false;
   _pkey = key;
   if(all_games.new_game(_new_game_id) == false) return false;
-  all_games.player1_key[_new_game_id] = key;
-  all_games.player1_id[_new_game_id] = _id;
+  all_games.infos[_new_game_id].player1_color = color;
+  all_games.infos[_new_game_id].turn = WHITE;
+  all_games.infos[_new_game_id].player1_id = _id;
+  all_games.infos[_new_game_id].player1_key = key;
+  sprintf(all_games.infos[_new_game_id].player1_name, "%s", name);
   return true;
 }
 
@@ -174,8 +204,10 @@ bool parse_join_game(int _pid, char _in[MESSAGE_MAX_LENGTH - 8], int& _pkey) {
   if(all_games.player_id_involved(_pid) == true) return false;
   _pkey = key;
   if(all_games.join_game(gid) == false) return false;
-  all_games.player2_key[gid] = key;
-  all_games.player2_id[gid] = _pid;
+  all_games.infos[gid].player2_key = key;
+  all_games.infos[gid].player2_id = _pid;
+  all_games.infos[gid].turn = WHITE;
+  sprintf(all_games.infos[gid].player2_name, "%s", name);
   return true;
 }
  
@@ -196,13 +228,13 @@ void parse_command(int& _player_id, int& _player_key, char _in[MESSAGE_MAX_LENGT
   if(strncmp(_in, "list_game", 9) == 0) {
     char msg[156];
     int msg_size = 0;
-    sprintf(msg, "game list ID with PLAYER_ID;");
+    sprintf(msg, "game list;\tID\tPLAYER_ID\tCOLOR;");
     for(int i = 0; i < MAX_GAME; i++) {
-      if(all_games.player1_id[i] != -1 && all_games.player2_id[i] == -1) {
+      if(all_games.infos[i].player1_id != -1 && all_games.infos[i].player2_id == -1) {
 	char tmp[32];
-	sprintf(tmp, "\t%d\t%d;", i, all_games.player1_id[i]);
+	sprintf(tmp, "\t%d\t%d\t\t%c;", i, all_games.infos[i].player1_id, all_games.infos[i].player1_color);
 	strcat(msg, tmp);
-      }
+      } 
     }
     sprintf(_in, "%s\n", msg);
     return;
@@ -223,7 +255,15 @@ void parse_command(int& _player_id, int& _player_key, char _in[MESSAGE_MAX_LENGT
     }
     char local_board[BOARD_SIZE];
     all_games.get_board(gid, (char*)local_board);
-    sprintf(_in, "%s", (char*)"");
+
+    char p2_color = inv_col(all_games.infos[gid].player1_color);
+    sprintf(_in, "%s=%c %s=%c turn=%c;",
+	    all_games.infos[gid].player1_name,
+	    all_games.infos[gid].player1_color,
+	    all_games.infos[gid].player2_name,
+	    p2_color,
+	    all_games.infos[gid].turn);
+
     for(int i = 0; i < BOARD_SIZE; i++) {
       if(i > 0 && (i%BOARD_EDGE) == 0) { 
 	strcat(_in, ";");
@@ -263,21 +303,21 @@ bool games_t::player_identification(int _pid, char*_pname) {
 
 bool games_t::player_key_involved(int _player_key) {
   for(int i = 0; i < MAX_GAME; i++) {
-    if(player1_key[i] == _player_key) return true;
-    if(player2_key[i] == _player_key) return true;
+    if(infos[i].player1_key == _player_key) return true;
+    if(infos[i].player2_key == _player_key) return true;
   }
   return false;
 }
 bool games_t::player_id_involved(int _player_id) {
   for(int i = 0; i < MAX_GAME; i++) {
-    if(player1_id[i] == _player_id) return true;
-    if(player2_id[i] == _player_id) return true;
+    if(infos[i].player1_id == _player_id) return true;
+    if(infos[i].player2_id == _player_id) return true;
   }
   return false;
 }
 bool games_t::new_game(int& _game_id) {
   for(int i = 0; i < MAX_GAME; i++) {
-    if(player1_id[i] == -1 && player2_id[i] == -1) {
+    if(infos[i].player1_id == -1 && infos[i].player2_id == -1) {
       _game_id = i;
       return true;
     }
@@ -286,7 +326,7 @@ bool games_t::new_game(int& _game_id) {
 }
 bool games_t::join_game(int _gid) {
   for(int i = 0; i < MAX_GAME; i++) {
-    if(player1_id[i] == _gid && player2_id[i] == -1) {
+    if(infos[i].player1_id == _gid && infos[i].player2_id == -1) {
       return true;
     }
   }
@@ -294,10 +334,10 @@ bool games_t::join_game(int _gid) {
 }
 int games_t::get_game(int _pid) {
   for(int i = 0; i < MAX_GAME; i++) {
-    if(player1_id[i] == _pid & player2_id[i] != -1) {
+    if(infos[i].player1_id == _pid & infos[i].player2_id != -1) {
       return i;
     }
-    if(player1_id[i] != -1 & player2_id[i] == _pid) {
+    if(infos[i].player1_id != -1 & infos[i].player2_id == _pid) {
       return i;
     }
   }
@@ -307,16 +347,17 @@ int games_t::get_game(int _pid) {
 void games_t::init_board(int _gid) {
   for(int i = 0; i < BOARD_SIZE; i++) {
     if(i < 2*BOARD_EDGE) 
-      boards[_gid*BOARD_SIZE+i] = BLACK;
+      infos[_gid].board[i] = BLACK;
     else if(i >= BOARD_SIZE-2*BOARD_EDGE) 
-      boards[_gid*BOARD_SIZE+i] = WHITE;
+      infos[_gid].board[i] = WHITE;
     else 
-      boards[_gid*BOARD_SIZE+i] = FREE_SPACE;
+      infos[_gid].board[i] = FREE_SPACE;
   }
 }
+
 void games_t::get_board(int _gid, char* _board) {
   for(int i = 0; i < BOARD_SIZE; i++) {
-    _board[i] = boards[_gid*BOARD_SIZE+i];
+    _board[i] = infos[_gid].board[i];
   }
 }
 
