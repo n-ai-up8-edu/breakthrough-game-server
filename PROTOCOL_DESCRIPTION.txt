@@ -1,0 +1,173 @@
+This document describes a breakthrough text protocol.
+
+In this version, communications between server and clients are blocking tcp communications. After each command, the reply is "= [RESULTS]" where '=' means success. If the command is not understandable, then the reply is "? [COMMENTS]" where '?' means error.
+RESULTS and COMMENTS are a single line string, where ';' indicates new line.
+
+To start the server, you have to specify a port number.
+$>./server 1234
+
+To connect a client, you have to specify server's hostname and port number.
+$>.client localhost 1234
+
+here are all the command :
+ help
+ id PLAYER_NAME PLAYER_PASSWD
+ get_state
+ new_game MY_COLOR 
+ del_game GAME_ID
+ list_games
+ list_players
+ join_game GAME_ID 
+ show_board
+ get_board_str
+ get_turn [GAME_ID]
+ play POS_I:POS_F
+ resign
+ get_last
+ get_score
+ quit
+
+Board coordinates to set POS_I and POS_F inside 'play' command :
+   0 1 2 3 4 5 6 7
+A  @ @ @ @ @ @ @ @
+B  @ @ @ @ @ @ @ @
+C  . . . . . . . .
+D  . . a . . . . .
+E  . . . b . . . .
+F  . . . . . . . .
+G  o o o o o o o o
+H  o o o o o o o o
+
+black pawns are represented with @
+white pawns are represented with o
+empty spaces are represented with .
+position a is D2
+position b is E3
+playing from a to b is only possible for black player
+sending "play D2:E3\n" is asking to move from a to b
+
+DETAIL OF EACH COMMAND 
+* help
+ arguments : none
+ effects : none 
+ output : listing supported commands
+ fails : never
+
+* id PLAYER_NAME PLAYER_PASSWD
+ arguments : player's name and passwd
+ effects : identify the player. 
+           unidentified players can't create and join games 
+ output : none
+ fails : depends on name and passwd
+
+* get_state
+ arguments : none
+ effects : update the current player's state 
+        states are integer values
+        -1 means UNDEF (i.e. unidentified player)
+	 0 means FREE (i.e. identified and free to create or join)
+         1 means WAITING (i.e. has created a game, waiting for opponent)
+         2 means PLAYING (i.e. involved in a game)
+         3 means GAME ENDED and PLAYER1 WINS (i.e. creating player wins)
+	 4 means GAME ENDED and PLAYER2 WINS (i.e. joining player wins)
+ output : the current player's state
+ fails : none
+
+* new_game MY_COLOR 
+ arguments : creating player's color
+ effects : identify the player. 
+           unidentified players can't create and join games 
+ output : none
+ fails : depends on name and passwd
+
+* del_game GAME_ID
+ arguments : the id of the game you want to delete
+ effects : remove the game of the list of joinable games
+ output : none
+ fails : if you are not the game owner (i.e. the player that creates it)
+         if the game has ever started (i.e. been joined by another player)
+
+* list_games
+ arguments : none
+ effects : none
+ output : listing open games and started games
+ fails : never
+
+* list_players
+ arguments : none
+ effects : none 
+ output : listing identified players 
+ fails : never
+
+* join_game GAME_ID 
+ arguments : the id of the game you want to join
+ effects : adding you as player2 to the specified game 
+ output : none
+ fails : if you are not identified or ever involved in a game
+
+* show_board
+ arguments : none
+ effects : none 
+ output : showing current board 
+ fails : if you are not involved in a game
+
+* get_board_str [GAME_ID]
+ arguments : with or without game_id 
+ effects : none 
+ output : printing a string that represents the current board 
+       the first character should always be '='
+       the third character is the turn
+       then next characters are the board
+       for the starting board when turn to play is white
+       "= o@@@@@@@@@@@@@@@@................................oooooooooooooooo"
+       after white move G0:F0, turn is black and board is modified
+       "= @@@@@@@@@@@@@@@@@........................o........ooooooooooooooo"
+ fails : if you are not involved in a game or game_id does not exists
+
+* get_turn [GAME_ID]
+ arguments : with or without game_id 
+ effects : none 
+ output : printing a string that represents the current turn
+      Default GAME_ID value is the game you are involved in.
+      COLOR_VALUE can be '@' or 'o' (i.e. for black or white)
+      if you are involved in game GAME_ID
+         if it is your turn, then the string returned is "you COLOR_VALUE"
+         if it is not your turn, then the string returned is "opp COLOR_VALUE"
+      if you are not involved in the game GAME_ID
+         if it is player1 turn, then the string returned is "p1 COLOR_VALUE"
+         if it is player2 turn, then the string returned is "p2 COLOR_VALUE"
+ fails : if you are not involved in a game or game_id does not exists
+
+* play POS_I:POS_F
+ arguments : initial and final position
+ effects : moving the piece from initial to final position 
+ output : none
+ fails : if you are not the owner of the piece at POS_I
+         if the move is not posible (wrong coords, positions, turn, ...)
+         
+* resign
+ arguments : none
+ effects : resigning the current game
+ output : none
+ fails : if you are not involved in a game
+
+* get_last
+ arguments : none
+ effects : none 
+ output : showing the last move performed on the board
+ fails : if you are not involved in a game
+
+* get_score
+ arguments : none
+ effects : none 
+ output : showing your current score
+          score is defined with 3 numbers
+          (number_of_win number_of_loss number number_of_resign)
+ fails : if you are not involved in a game
+
+* quit
+ arguments : none
+ effects : quitting and resigning if you are involved in a game
+ output : none
+ fails : never
+

@@ -1,67 +1,72 @@
+This document describes how to compile and use the breakthrough game server.
+
+communications are derived from blocking boost example :
 boost_asio/example/cpp11/echo/blocking_tcp_echo_server.cpp
 boost_asio/example/cpp11/echo/blocking_tcp_echo_client.cpp
 
-+ echo while "quit" from client side
+player's identification depends on players' db defined in common.h
 
-+ one player = player_key and player_name
-  player_name = [0:9][a:z][A:Z][-_@.~]
-  1 char MIN
-  64 char MAX
+compile.sh script should compile server and client
 
-+ new_game command
-  $>new_game MY_COLOR PLAYER_KEY:PLAYER_NAME 
-  (check if MY_COLOR is WHITE or BLACK)
-  -->give NOK (ie if not WHITE or not BLACK)
-  (check if PLAYER_KEY:PLAYER_NAME is ok)
-  -->give NOK (ie refused)
-  (check if PLAYER_KEY is ever in a game)
-  -->give NOK (ie ever involved in a game)
-  (check if PLAYER_ID is ever in a game)
-  -->give NOK (ie one key per connection)
-  (check if nb_game < MAX_GAME)
-  -->give NOK (ie no game is free)
-  else
-  -->give the GAME_ID
+As breakthrough is a 2 players game, you should open 3 terminals identified with $1> $2> and $3>
 
-+ list_game command
-  $>list_game
-  -->give the list of current games
-  example :
-  game list
-       ID      PLAYER_ID       COLOR
-       2       3	       @
-  (means 1 game is open, game number 2 with player 3 as BLACK
-   so you will be WHITE and you will start. WHITE always start.) 
+Running 1 server and 2 clients on the same computer corresponds to:
+ $1>./server 1234
+ $2>./client localhost 1234
+ $3>./client localhost 1234
 
-+ join_game command
-  $>join_game GAME_ID PLAYER_KEY:PLAYER_NAME
-  (check if PLAYER_KEY:PLAYER_NAME is ok)
-  -->give NOK (ie refused)
-  (check if PLAYER_KEY is ever in a game)
-  -->give NOK (ie ever involved in a game)
-  (check if PLAYER_ID is ever in a game)
-  -->give NOK (ie one key per connection)
-  (check if game GAME_ID is open)
-  -->give NOK (ie game GAME_ID is not open)
-  else
-  -->give ok
+For next commands, the server reply are mentionned 
+(= is the beginning of a good reply and ? is the begining of a wrong reply)
 
-+ show_board command
-  $>show_board GAME_ID
-  (check if game GAME_ID is on going)
-  -->give NOK (ie game GAME_ID is not on going)
-  else
-  -->give who is white, who is black, what is turn
-  -->give the sequence that describes the board
+identifying the first client as aze without its passwd 
+ $2>id aze 
+ ? 
 
-+ show_score command
-  $>show_score
-  (check if player is identified)
-  --> give "0 0 0" (ie if not identified)
-  else
-  -->give NB_WIN NB_LOST NB_ABORT
+identifying the first client as aze correctly
+ $2>id aze 111
+ =
+
+creating a game 
+ $2>new_game o
+ =
+
+identifying the second player as qsd and joining the game 0
+ $3>id qsd 111
+ =
+ $3>join_game 0
+ =
+
+get_state command allows to get current player's state
+
+after login
+get_state commande returns "= -1"
+
+after a successfull identification
+get_state commande returns "= 0"
+
+after creating the game, 
+get_state command returns "= 1" 
+
+after joining a game, 
+get_state command returns "= 2" 
+(for both players involved in the game)
+
+then both players should play 
+until get_state command returns "= 3" or " 4"
+
+after one step that returns a win or a loss,
+the state will automatically return to 0
+if get_state returns "= 3", the next return will be "= 0" 
+if get_state returns "= 4", the next return will be "= 0" 
+
+then players will be allowed to create or join new games
+
+play command allows to move pieces (when it is your turn to play)
+get_board_str command allows to get the current turn and board 
+get_turn command allows to get only the current turn
+
+all commands are explained in PROTOCOL_DESCRIPTION.txt file
+
+if you have questions, n@ai.univ-paris8.fr
 
 
-
-
- 
