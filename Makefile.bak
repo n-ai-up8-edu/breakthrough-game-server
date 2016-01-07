@@ -1,10 +1,9 @@
 CC=g++
 CXX=g++
-CFLAGS=-O2 -std=c++11 
-CXXFLAGS=-O2 -std=c++11
+CFLAGS=-O2 -std=c++11 -lpthread -lboost_system -lboost_thread
+CXXFLAGS=-O2 -std=c++11 -lpthread -lboost_system -lboost_thread
 #CFLAGS=-pg
 #CXXFLAGS=-pg
-LDFLAGS=-lpthread -lboost_system -lboost_thread
 
 output_s=server
 objects_s=server.o 
@@ -23,20 +22,20 @@ objects_rndB=random-client-B.o common-client.o
 sources_rndB=random-client-B.cpp common-client.cpp
 
 $(output_s):  $(objects_s)
-	$(CC) $(CFLAGS) $(objects_s) -o $(output_s) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(objects_s) -o $(output_s)
 
 $(output_cmd_cl):  $(objects_cmd_cl)
-	$(CC) $(CFLAGS) $(objects_cmd_cl) -o $(output_cmd_cl) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(objects_cmd_cl) -o $(output_cmd_cl)
 
 $(output_rndA):  $(objects_rndA)
-	$(CC) $(CFLAGS) $(objects_rndA) -o $(output_rndA) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(objects_rndA) -o $(output_rndA)
 
 $(output_rndB):  $(objects_rndB)
-	$(CC) $(CFLAGS) $(objects_rndB) -o $(output_rndB) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(objects_rndB) -o $(output_rndB)
 
 all: server cmd-client random-client-A random-client-B
 clean:
-	rm -f $(output_s) $(objects_s) $(output_cmd_cl) $(objects_cmd_cl) $(output_rndA) $(objects_rndA) $(output_rndB) $(objects_rndB) *~
+	rm -f $(output_s) $(objects_cmd_cl) $(output_rndA) $(objects_rndB) *~
 
 depend:
 	makedepend $(sources_s) $(sources_cmd_cl) $(sources_rndA) $(sources_rndB) 2> /dev/null

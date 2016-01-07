@@ -14,7 +14,7 @@
 #define WHITE 'o'
 #define END   '_'
 
-char inv_col(char _col) {
+static char inv_col(char _col) {
   if(_col == WHITE) return BLACK;
   if(_col == BLACK) return WHITE;
   return _col;
@@ -36,11 +36,11 @@ char inv_col(char _col) {
 //          1 char MIN
 //          64 char MAX
 
-char* players_db[] = {
+static char* players_db[] = {
   (char*)"0",(char*)"111",(char*)"aze",
   (char*)"1",(char*)"111",(char*)"rty",
   (char*)"2",(char*)"111",(char*)"qsd"
 };
 
-char* score_filename = (char*)"scores.txt";
+static char* score_filename = (char*)"scores.txt";
 #endif

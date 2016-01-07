@@ -33,7 +33,7 @@ struct game_info_t {
   void print_board() {
 #ifdef SHOW_COORD
     if(BOARD_EDGE == 8) {
-      printf("   0 1 2 3 4 5 6 7\nA ");
+      printf("   A B C D E F G H\n8 ");
     }
     int line_number = 1;
 #else
@@ -43,7 +43,7 @@ struct game_info_t {
       if(i > 0 && (i%BOARD_EDGE) == 0) { 
 #ifdef SHOW_COORD
 	char tmp[16];
-	printf("\n%c ", 'A'+line_number);
+	printf("\n%c ", '8'-line_number);
 	line_number ++;
 #else
 	printf("\n ");
@@ -231,14 +231,14 @@ bool parse_play(int _pid, char* _in, int& _gid, int& _posI, int& _posF) {
     }
   }
   // (check if POS_I and POS_F are on board)
-  char line_i;
-  int col_i;
-  char line_f;
-  int col_f;
-  int r = sscanf(_in, "%c%d:%c%d", &line_i, &col_i, &line_f, &col_f);
+  char col_i;
+  int line_i;
+  char col_f;
+  int line_f;
+  int r = sscanf(_in, "%c%d:%c%d", &col_i, &line_i, &col_f, &line_f);
   if( r != 4) return false;
-  int nposi = col_i + (line_i-'A')*BOARD_EDGE;
-  int nposf = col_f + (line_f-'A')*BOARD_EDGE;
+  int nposi = (int)(col_i-'A') + (8-line_i)*BOARD_EDGE;
+  int nposf = (int)(col_f-'A') + (8-line_f)*BOARD_EDGE;
   //printf("move from %d to %d\n", nposi, nposf);
   if(nposi < 0 || nposi >= BOARD_SIZE) return false;
   if(nposf < 0 || nposf >= BOARD_SIZE) return false;
@@ -254,14 +254,17 @@ bool parse_play(int _pid, char* _in, int& _gid, int& _posI, int& _posF) {
   // (check if move(POS_I,POS_F) is valid move)
   if(col_f < col_i-1) return false;
   if(col_f > col_i+1) return false;
+  if(col_i < 'A' || col_f < 'A') return false;
+  if(col_i > 'H' || col_f > 'H') return false;
+		    
   if(current_turn == WHITE) {
-    if(line_f != (line_i-1)) return false;
+    if(line_f != (line_i+1)) return false;
     _gid = ngid;
     _posI = nposi;
     _posF = nposf;
     return true;
   } else if(current_turn == BLACK) {
-    if((line_f-1) != line_i) return false;
+    if(line_f != (line_i-1)) return false;
     _gid = ngid;
     _posI = nposi;
     _posF = nposf;
@@ -435,7 +438,7 @@ bool parse_command(int& _pid, char* _pname, char* _in) {
 #define SHOW_COORD
 #ifdef SHOW_COORD
     if(BOARD_EDGE == 8) {
-      strcat(_in, "   0 1 2 3 4 5 6 7;A ");
+      strcat(_in, "   A B C D E F G H;8 ");
     }
     int line_number = 1;
 #else
@@ -445,7 +448,7 @@ bool parse_command(int& _pid, char* _pname, char* _in) {
       if(i > 0 && (i%BOARD_EDGE) == 0) { 
 #ifdef SHOW_COORD
 	char tmp[16];
-	sprintf(tmp, ";%c ", 'A'+line_number);
+	sprintf(tmp, ";%c ", '8'-line_number);
 	strcat(_in, tmp);
 	line_number ++;
 #else

@@ -28,23 +28,23 @@ here are all the command :
  quit
 
 Board coordinates to set POS_I and POS_F inside 'play' command :
-   0 1 2 3 4 5 6 7
-A  @ @ @ @ @ @ @ @
-B  @ @ @ @ @ @ @ @
-C  . . . . . . . .
-D  . . a . . . . .
-E  . . . b . . . .
-F  . . . . . . . .
-G  o o o o o o o o
-H  o o o o o o o o
+   A B C D E F G H
+8  @ @ @ @ @ @ @ @
+7  @ @ @ @ @ @ @ @
+6  . . . . . . . .
+5  . . a . . . . .
+4  . . . b . . . .
+3  . . . . . . . .
+2  o o o o o o o o
+1  o o o o o o o o
 
 black pawns are represented with @
 white pawns are represented with o
 empty spaces are represented with .
-position a is D2
-position b is E3
+position a is C5
+position b is D4
 playing from a to b is only possible for black player
-sending "play D2:E3\n" is asking to move from a to b
+sending "play C5:D4\n" is asking to move from a to b
 
 DETAIL OF EACH COMMAND 
 * help
