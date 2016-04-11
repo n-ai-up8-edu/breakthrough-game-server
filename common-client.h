@@ -16,8 +16,12 @@ Iter select_randomly(Iter _start, Iter _end, RandomGenerator& _g) {
 
 template<typename Iter>
 Iter select_randomly(Iter _start, Iter _end) {
+#ifdef TRUE_RANDOM
   static std::random_device rd;
   static std::mt19937 gen(rd());
+#else
+  static std::mt19937 gen(1);
+#endif
   return select_randomly(_start, _end, gen);
 }
 

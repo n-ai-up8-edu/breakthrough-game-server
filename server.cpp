@@ -28,6 +28,8 @@ struct game_info_t {
   int player2_id;
   char player2_name[128];
   char board[BOARD_SIZE];
+  int player1_pawns;
+  int player2_pawns;
   char last_move[128];
 
   void print_board() {
@@ -735,6 +737,8 @@ void games_t::init_board(int _gid) {
   if(_gid >= MAX_GAME) return;
 
   mtx_all_games.lock();
+  infos[_gid].player1_pawns = 2*BOARD_SIZE;
+  infos[_gid].player2_pawns = 2*BOARD_SIZE;
   for(int i = 0; i < BOARD_SIZE; i++) {
     if(i < 2*BOARD_EDGE) 
       infos[_gid].board[i] = BLACK;
@@ -765,6 +769,8 @@ void games_t::move(int _gid, int _posI, int _posF) {
   if(_posF < 0 || _posF >= BOARD_SIZE) return;
 
   mtx_all_games.lock();
+  if(infos[_gid].board[_posF] == WHITE) infos[_gid].player1_pawns --;
+  if(infos[_gid].board[_posF] == BLACK) infos[_gid].player2_pawns --;
   infos[_gid].board[_posF] = infos[_gid].board[_posI];
   infos[_gid].board[_posI] = FREE_SPACE;
   infos[_gid].turn = inv_col(infos[_gid].turn);
@@ -777,18 +783,20 @@ char games_t::endgame(int _gid) {
 
   mtx_all_games.unlock();
   char ret = FREE_SPACE;
-  for(int i = 0; i < BOARD_EDGE; i++) {
+  if(infos[_gid].player1_pawns == 0) ret = BLACK;
+  if(infos[_gid].player2_pawns == 0) ret = WHITE;
+  if(ret == FREE_SPACE) for(int i = 0; i < BOARD_EDGE; i++) {
     if(infos[_gid].board[i] == WHITE) {
       ret = WHITE;
       break;
     }
   }
-  for(int i = BOARD_SIZE-BOARD_EDGE; i < BOARD_SIZE; i++) {
-    if(infos[_gid].board[i] == BLACK) {
-      ret = BLACK;
-      break;
+  if(ret == FREE_SPACE) for(int i = BOARD_SIZE-BOARD_EDGE; i < BOARD_SIZE; i++) {
+      if(infos[_gid].board[i] == BLACK) {
+	ret = BLACK;
+	break;
+      }
     }
-  }
   mtx_all_games.unlock();
   return ret;
 }
